@@ -2,6 +2,9 @@ const express = require("express");
 const cors = require("cors");
 const mongoose = require("mongoose");
 const userModel = require("./Models/Users");
+const speakeasy = require("speakeasy");
+const qrcode = require("qrcode");
+const jws = require("jsonwebtoken");
 require("dotenv").config();
 
 const app = express();
@@ -25,13 +28,25 @@ app.post("/api/login", async (req, res) => {
     })
     .exec();
 
-  console.log(user);
+  const acessToken = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
 
   if (user) {
-    res.json({ status: "ok", user: true });
+    res.json({ status: "ok", user: true, acessToken: acessToken });
   } else {
     res.json({ status: "error", user: false });
   }
+});
+app.post("/api/verify", async (req, res) => {
+  console.log(req.body);
+
+  const codeInput = req.body.code;
+  const verified = speakeasy.totp.verify({
+    secret: "J5SWCVL2OBWV4NSYFFBHW5DLFZNGQS2H",
+    encoding: "base32",
+    token: codeInput,
+  });
+
+  res.json({ status: verified });
 });
 
 app.listen(port, () => {
